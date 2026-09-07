@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: loconet
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/loconet_db
+    username: ${DB_USERNAME:loconet_user}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    # Schema is owned by SQL migrations (Flyway/Liquibase) in real projects.
+    # Use "validate" once the schema above has been applied, or "update"
+    # only for quick local prototyping.
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        # Hibernate 6.1+ auto-detects PostGIS/JTS support from the standard
+        # PostgreSQLDialect as long as `hibernate-spatial` is on the classpath.
+        # You do NOT need (and should not use) the old Hibernate 5 style
+        # org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect.
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
