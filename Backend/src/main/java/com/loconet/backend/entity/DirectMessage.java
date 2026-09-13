@@ -1,4 +1,4 @@
-package com.loconet.model;
+package com.loconet.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

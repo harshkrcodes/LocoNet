@@ -1,7 +1,7 @@
-package com.loconet.model;
+package com.loconet.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.loconet.model.enums.UserIntent;
+import com.loconet.backend.entity.UserIntent;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -31,6 +31,9 @@ public class User {
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
+
+    @Column(name = "phone_number", length = 20, unique = true)
+    private String phoneNumber;
 
     // Never serialized back to clients.
     @Column(name = "password_hash", nullable = false, length = 255)

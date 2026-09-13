@@ -1,7 +1,7 @@
-package com.loconet.model;
+package com.loconet.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.loconet.model.id.UserSocietyId;
+import com.loconet.backend.entity.UserSocietyId;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.loconet.model.enums;
+package com.loconet.backend.entity;
 
 /**
  * Mirrors the PostgreSQL ENUM type `user_intent`.

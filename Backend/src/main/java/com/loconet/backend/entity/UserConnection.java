@@ -1,7 +1,7 @@
-package com.loconet.model;
+package com.loconet.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.loconet.model.enums.MatchStatus;
+import com.loconet.backend.entity.UserIntent;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;

@@ -1,5 +1,6 @@
-package com.loconet.model.id;
+package com.loconet.backend.entity;
 
+import com.loconet.backend.entity.UserSocietyId;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
