@@ -1,10 +1,8 @@
-// File: Backend/src/main/java/com/loconet/backend/entity/ChatMessage.java
+// File: Backend/src/main/java/com/loconet/backend/entity/SocietyMessage.java
 package com.loconet.backend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
@@ -18,40 +16,36 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- - senderId/receiverId are plain UUID columns rather than @ManyToOne to
- - User — matches your spec, and avoids an entity fetch on every message
- - write/read on a table that will be high-volume.
+ * societyId/senderId are plain UUID columns, same rationale as
+ * ChatMessage's senderId/receiverId: avoids an entity fetch per message on
+ * a high-volume table. No status field — you didn't ask for one, and
+ * per-member read-receipts for a group chat are a different (bigger)
+ * feature than 1-on-1 DELIVERED/READ.
  */
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "society_messages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatMessage {
+public class SocietyMessage {
 
     @Id
     @GeneratedValue
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "society_id", nullable = false)
+    private UUID societyId;
+
     @Column(name = "sender_id", nullable = false)
     private UUID senderId;
-
-    @Column(name = "receiver_id", nullable = false)
-    private UUID receiverId;
 
     @Column(nullable = false, columnDefinition = "text")
     private String content;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
-
-    // Fixed: Ab yeh direct String format mein DB mein save hoga, koi error nahi aayega.
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private MessageStatus status = MessageStatus.SENT;
 
     @PrePersist
     protected void onCreate() {

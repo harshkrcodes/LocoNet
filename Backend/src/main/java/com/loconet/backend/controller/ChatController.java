@@ -1,7 +1,10 @@
 // File: Backend/src/main/java/com/loconet/backend/controller/ChatController.java
+// UPDATED for Phase 5 Part 2 — added the "/society.chat" @MessageMapping.
+// The existing "/chat" mapping and REST history endpoint are unchanged.
 package com.loconet.backend.controller;
 
 import com.loconet.backend.dto.ChatMessageDTO;
+import com.loconet.backend.dto.SocietyMessageDTO;
 import com.loconet.backend.service.ChatService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -24,21 +27,16 @@ public class ChatController {
         this.messagingTemplate = messagingTemplate;
     }
 
+    // ---- 1-on-1 (Phase 5 Part 1, unchanged) ----
+
     /**
      * Client SENDs to /app/chat (the "/app" prefix comes from
-     * WebSocketConfig's setApplicationDestinationPrefixes — don't include
-     * it in the @MessageMapping value itself).
-     *
-     * Saves first, then pushes the persisted (server-timestamped) version
-     * so sender and receiver both see the same canonical message, and the
-     * receiver never gets a message that failed to persist.
+     * WebSocketConfig's setApplicationDestinationPrefixes).
      */
     @MessageMapping("/chat")
     public void handleChatMessage(ChatMessageDTO incoming) {
         ChatMessageDTO saved = chatService.saveMessage(incoming);
 
-        // Resolves to /user/{receiverId}/queue/messages for the specific
-        // receiver's session, via the Principal set in UserHandshakeHandler.
         messagingTemplate.convertAndSendToUser(
                 saved.getReceiverId().toString(),
                 "/queue/messages",
@@ -52,5 +50,33 @@ public class ChatController {
             @RequestParam UUID userBId
     ) {
         return ResponseEntity.ok(chatService.getChatHistory(userAId, userBId));
+    }
+
+    // ---- Society / group chat (Phase 5 Part 2, new) ----
+
+    /**
+     * Client SENDs to /app/society.chat. Saves first, then broadcasts the
+     * persisted (server-timestamped) version to every subscriber of
+     * /topic/society/{societyId} — same save-then-push ordering as 1-on-1
+     * chat, so nothing gets broadcast that failed to persist.
+     *
+     * Requires "/topic" to be registered in WebSocketConfig's
+     * enableSimpleBroker(...) — see that file's update.
+     */
+    @MessageMapping("/society.chat")
+    public void handleSocietyChatMessage(SocietyMessageDTO incoming) {
+        SocietyMessageDTO saved = chatService.saveSocietyMessage(incoming);
+
+        messagingTemplate.convertAndSend(
+                "/topic/society/" + saved.getSocietyId(),
+                saved
+        );
+    }
+
+    @GetMapping("/api/society-chat/history")
+    public ResponseEntity<List<SocietyMessageDTO>> getSocietyHistory(
+            @RequestParam UUID societyId
+    ) {
+        return ResponseEntity.ok(chatService.getSocietyHistory(societyId));
     }
 }

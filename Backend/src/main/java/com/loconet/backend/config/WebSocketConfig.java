@@ -15,26 +15,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
-                .setHandshakeHandler(new UserHandshakeHandler());
+                .setHandshakeHandler(new UserHandshakeHandler())
+                .withSockJS(); // Humara connection fix zinda hai!
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // "/queue" is the only real broker destination prefix. "/user" is
-        // NOT registered here — it's a routing prefix intercepted by
-        // Spring's UserDestinationMessageHandler and rewritten to a
-        // session-specific "/queue/..." destination before it ever reaches
-        // the broker. Passing "/user" to enableSimpleBroker would just
-        // create a dead destination nothing publishes to.
-        registry.enableSimpleBroker("/queue");
+        // "/queue" is for 1-on-1 chats.
+        // "/topic" is added for Society/Group broadcasts.
+        registry.enableSimpleBroker("/queue", "/topic");
 
-        // Client SEND frames go to /app/** (e.g. ChatController's
-        // @MessageMapping("/chat") is reached via /app/chat).
+        // Client SEND frames go to /app/**
         registry.setApplicationDestinationPrefixes("/app");
 
-        // Matches Spring's default, set explicitly since
-        // convertAndSendToUser(...) depends on it and UserHandshakeHandler
-        // exists specifically to make this prefix resolvable per-session.
+        // Matches Spring's default for session-specific messaging
         registry.setUserDestinationPrefix("/user");
     }
 }
