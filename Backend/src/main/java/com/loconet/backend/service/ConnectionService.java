@@ -1,7 +1,15 @@
 // File: Backend/src/main/java/com/loconet/backend/service/ConnectionService.java
+// UPDATED for Phase 6 identity-trust pass:
+//  - sendRequest(ConnectionRequestDTO) -> sendRequest(UUID senderId, UUID receiverId).
+//    senderId is now an explicit argument from the authenticated caller,
+//    not a field read off the request body.
+//  - respondToRequest(...) gained a currentUserId argument and now
+//    verifies the caller is actually the connection's receiver before
+//    allowing ACCEPTED/REJECTED — closes a second loophole found during
+//    this pass (previously anyone who knew a connectionId could respond
+//    to it).
 package com.loconet.backend.service;
 
-import com.loconet.backend.dto.ConnectionRequestDTO;
 import com.loconet.backend.dto.ConnectionResponseDTO;
 import com.loconet.backend.dto.UserSummaryDTO;
 import com.loconet.backend.entity.MatchStatus;
@@ -10,6 +18,7 @@ import com.loconet.backend.entity.UserConnection;
 import com.loconet.backend.exception.ConnectionConflictException;
 import com.loconet.backend.exception.InvalidConnectionRequestException;
 import com.loconet.backend.exception.ResourceNotFoundException;
+import com.loconet.backend.exception.UnauthorizedConnectionActionException;
 import com.loconet.backend.repository.UserConnectionRepository;
 import com.loconet.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -32,10 +41,7 @@ public class ConnectionService {
     }
 
     @Transactional
-    public ConnectionResponseDTO sendRequest(ConnectionRequestDTO request) {
-        UUID senderId = request.getSenderId();
-        UUID receiverId = request.getReceiverId();
-
+    public ConnectionResponseDTO sendRequest(UUID senderId, UUID receiverId) {
         if (senderId.equals(receiverId)) {
             throw new InvalidConnectionRequestException("A user cannot send a connection request to themselves");
         }
@@ -60,13 +66,18 @@ public class ConnectionService {
     }
 
     @Transactional
-    public ConnectionResponseDTO respondToRequest(UUID connectionId, MatchStatus decision) {
+    public ConnectionResponseDTO respondToRequest(UUID connectionId, MatchStatus decision, UUID currentUserId) {
         if (decision != MatchStatus.ACCEPTED && decision != MatchStatus.REJECTED) {
             throw new InvalidConnectionRequestException("status must be ACCEPTED or REJECTED");
         }
 
         UserConnection connection = userConnectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Connection request not found: " + connectionId));
+
+        if (!connection.getReceiver().getId().equals(currentUserId)) {
+            throw new UnauthorizedConnectionActionException(
+                    "Only the receiver of a connection request can respond to it");
+        }
 
         if (connection.getStatus() != MatchStatus.PENDING) {
             throw new ConnectionConflictException(

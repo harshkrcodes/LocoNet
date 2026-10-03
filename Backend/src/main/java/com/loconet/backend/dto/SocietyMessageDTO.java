@@ -14,6 +14,11 @@ import java.util.UUID;
 /**
  * Inbound STOMP payload (id/timestamp ignored on the way in — ChatService
  * sets them) and outbound broadcast shape to /topic/society/{societyId}.
+ *
+ * UPDATED for Phase 6 identity-trust pass: senderId is no longer trusted
+ * from an inbound payload — ChatController.handleSocietyChatMessage()
+ * overwrites whatever's here with the authenticated STOMP session's user
+ * id before saving.
  */
 @Data
 @NoArgsConstructor
@@ -26,7 +31,6 @@ public class SocietyMessageDTO {
     @NotNull
     private UUID societyId;
 
-    @NotNull
     private UUID senderId;
 
     @NotBlank

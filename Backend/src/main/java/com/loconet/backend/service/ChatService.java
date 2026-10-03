@@ -1,7 +1,8 @@
 // File: Backend/src/main/java/com/loconet/backend/service/ChatService.java
-// UPDATED for Phase 5 Part 2 — added SocietyMessageRepository dependency,
-// saveSocietyMessage(), and its toDto mapper. The existing 1-on-1
-// saveMessage()/getChatHistory() methods are unchanged.
+// UPDATED — added UserSocietyRepository dependency and requireVerifiedMember(),
+// called from both saveSocietyMessage() and getSocietyHistory() so a user
+// can only post to or read a society's chat if they're a verified member
+// of it. 1-on-1 saveMessage()/getChatHistory() are unchanged.
 package com.loconet.backend.service;
 
 import com.loconet.backend.dto.ChatMessageDTO;
@@ -9,8 +10,10 @@ import com.loconet.backend.dto.SocietyMessageDTO;
 import com.loconet.backend.entity.ChatMessage;
 import com.loconet.backend.entity.MessageStatus;
 import com.loconet.backend.entity.SocietyMessage;
+import com.loconet.backend.exception.NotSocietyMemberException;
 import com.loconet.backend.repository.ChatMessageRepository;
 import com.loconet.backend.repository.SocietyMessageRepository;
+import com.loconet.backend.repository.UserSocietyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,16 +25,25 @@ import java.util.stream.Collectors;
 @Service
 public class ChatService {
 
+    // No status besides "PENDING" is ever written anywhere in this
+    // codebase yet (Phase 3's onboarding flow sets it, nothing moves it
+    // forward) — this check is correct as requested, but will reject
+    // every user until a verification endpoint exists to set this value.
+    private static final String VERIFIED_STATUS = "VERIFIED";
+
     private final ChatMessageRepository chatMessageRepository;
     private final SocietyMessageRepository societyMessageRepository;
+    private final UserSocietyRepository userSocietyRepository;
 
     public ChatService(ChatMessageRepository chatMessageRepository,
-                        SocietyMessageRepository societyMessageRepository) {
+                        SocietyMessageRepository societyMessageRepository,
+                        UserSocietyRepository userSocietyRepository) {
         this.chatMessageRepository = chatMessageRepository;
         this.societyMessageRepository = societyMessageRepository;
+        this.userSocietyRepository = userSocietyRepository;
     }
 
-    // ---- 1-on-1 (Phase 5 Part 1, unchanged) ----
+    // ---- 1-on-1 (unchanged) ----
 
     @Transactional
     public ChatMessageDTO saveMessage(ChatMessageDTO incoming) {
@@ -66,17 +78,12 @@ public class ChatService {
                 .build();
     }
 
-    // ---- Society / group chat (Phase 5 Part 2, new) ----
+    // ---- Society / group chat ----
 
-    /**
-     * id/timestamp on the incoming DTO are ignored — server-set, same
-     * reasoning as saveMessage(): a client-supplied timestamp is spoofable.
-     * No membership check here (e.g. "is senderId actually in societyId");
-     * that belongs in a dedicated membership-validation step if you want
-     * one — currently anyone can post to any societyId they know.
-     */
     @Transactional
     public SocietyMessageDTO saveSocietyMessage(SocietyMessageDTO incoming) {
+        requireVerifiedMember(incoming.getSenderId(), incoming.getSocietyId());
+
         SocietyMessage message = SocietyMessage.builder()
                 .societyId(incoming.getSocietyId())
                 .senderId(incoming.getSenderId())
@@ -89,11 +96,28 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<SocietyMessageDTO> getSocietyHistory(UUID societyId) {
+    public List<SocietyMessageDTO> getSocietyHistory(UUID requesterId, UUID societyId) {
+        requireVerifiedMember(requesterId, societyId);
+
         return societyMessageRepository.findBySocietyIdOrderByTimestampAsc(societyId)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Shared by both the read and write paths, per the requirement that
+     * membership gates both. Throws rather than returning a boolean so
+     * callers can't accidentally forget to check the result.
+     */
+    private void requireVerifiedMember(UUID userId, UUID societyId) {
+        boolean isVerifiedMember = userSocietyRepository
+                .existsByUser_IdAndSociety_IdAndVerificationStatus(userId, societyId, VERIFIED_STATUS);
+
+        if (!isVerifiedMember) {
+            throw new NotSocietyMemberException(
+                    "User " + userId + " is not a verified member of society " + societyId);
+        }
     }
 
     private SocietyMessageDTO toDto(SocietyMessage message) {

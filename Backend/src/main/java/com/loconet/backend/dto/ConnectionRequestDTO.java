@@ -1,4 +1,9 @@
 // File: Backend/src/main/java/com/loconet/backend/dto/ConnectionRequestDTO.java
+// UPDATED for Phase 6 identity-trust pass — senderId REMOVED. It's no
+// longer a client-supplied field; ConnectionController derives it from
+// the authenticated Principal (@AuthenticationPrincipal) and passes it to
+// ConnectionService.sendRequest() as a separate argument. This is a
+// breaking change to the request body shape.
 package com.loconet.backend.dto;
 
 import jakarta.validation.constraints.NotNull;
@@ -8,19 +13,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-/**
- * Payload for POST /api/connections/request. senderId is a request field
- * rather than pulled from a security context because no auth layer exists
- * yet in this codebase (same situation as LocationController's userId
- * param) — swap for @AuthenticationPrincipal once auth is added.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConnectionRequestDTO {
-
-    @NotNull
-    private UUID senderId;
 
     @NotNull
     private UUID receiverId;

@@ -16,6 +16,12 @@ import java.util.UUID;
  * Doubles as the inbound STOMP payload (id/timestamp/status are ignored on
  * the way in — ChatService sets them) and the outbound shape (fully
  * populated) for both the WebSocket push and the REST history endpoint.
+ *
+ * UPDATED for Phase 6 identity-trust pass: senderId is no longer trusted
+ * from an inbound payload — ChatController.handleChatMessage() overwrites
+ * whatever's here with the authenticated STOMP session's user id before
+ * saving. @NotNull dropped accordingly (it's still populated on the way
+ * out, just not required on the way in).
  */
 @Data
 @NoArgsConstructor
@@ -25,7 +31,6 @@ public class ChatMessageDTO {
 
     private UUID id;
 
-    @NotNull
     private UUID senderId;
 
     @NotNull
