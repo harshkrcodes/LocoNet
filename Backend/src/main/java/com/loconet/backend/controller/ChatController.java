@@ -15,13 +15,13 @@ package com.loconet.backend.controller;
 import com.loconet.backend.dto.ChatMessageDTO;
 import com.loconet.backend.dto.SocietyMessageDTO;
 import com.loconet.backend.exception.NotSocietyMemberException;
+import com.loconet.backend.security.StompPrincipalResolver;
 import com.loconet.backend.service.ChatService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,7 +46,7 @@ public class ChatController {
 
     @MessageMapping("/chat")
     public void handleChatMessage(ChatMessageDTO incoming, Principal principal) {
-        UUID senderId = resolveUserId(principal);
+        UUID senderId = StompPrincipalResolver.resolveUserId(principal);
 
         ChatMessageDTO verified = ChatMessageDTO.builder()
                 .senderId(senderId)
@@ -81,7 +81,7 @@ public class ChatController {
      */
     @MessageMapping("/society.chat")
     public void handleSocietyChatMessage(SocietyMessageDTO incoming, Principal principal) {
-        UUID senderId = resolveUserId(principal);
+        UUID senderId = StompPrincipalResolver.resolveUserId(principal);
 
         SocietyMessageDTO verified = SocietyMessageDTO.builder()
                 .societyId(incoming.getSocietyId())
@@ -121,15 +121,5 @@ public class ChatController {
             @RequestParam UUID societyId
     ) {
         return ResponseEntity.ok(chatService.getSocietyHistory(currentUserId, societyId));
-    }
-
-    private UUID resolveUserId(Principal principal) {
-        if (principal instanceof Authentication authentication
-                && authentication.getPrincipal() instanceof UUID userId) {
-            return userId;
-        }
-        throw new IllegalStateException(
-                "STOMP session has no authenticated user id — StompAuthChannelInterceptor "
-                        + "should have rejected this connection before it reached here");
     }
 }
