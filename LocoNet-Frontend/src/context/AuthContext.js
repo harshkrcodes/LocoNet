@@ -1,4 +1,3 @@
-// File: src/context/AuthContext.js
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as authService from '../services/authService';
 import { setUnauthorizedHandler } from '../services/api';
@@ -7,14 +6,14 @@ import { clearSession, getSession, saveSession } from '../services/tokenStorage'
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null); // { token, userId, email } | null
+  const [session, setSession] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
 
-  // Restore a previous login from secure storage on app start.
   useEffect(() => {
     (async () => {
       try {
-        setSession(await getSession());
+        const storedSession = await getSession();
+        setSession(storedSession);
       } catch {
         setSession(null);
       } finally {
@@ -24,7 +23,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signIn = useCallback(async (email, password) => {
-    const data = await authService.login(email, password); // throws on failure
+    const data = await authService.login(email, password);
     await saveSession(data);
     setSession(data);
   }, []);
@@ -34,14 +33,20 @@ export function AuthProvider({ children }) {
     setSession(null);
   }, []);
 
-  // Let the axios layer force a logout when the server rejects our token.
   useEffect(() => {
     setUnauthorizedHandler(signOut);
     return () => setUnauthorizedHandler(null);
   }, [signOut]);
 
   const value = useMemo(
-    () => ({ session, isRestoring, isAuthenticated: Boolean(session?.token), signIn, signOut }),
+    () => ({
+        session,
+        isRestoring,
+        // 🔥 FIX: Ensure we accurately check boolean state regardless of session data structure
+        isAuthenticated: Boolean(session?.token || (typeof session === 'string' && session)),
+        signIn,
+        signOut
+    }),
     [session, isRestoring, signIn, signOut]
   );
 
@@ -52,4 +57,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
   return ctx;
-}
+}9

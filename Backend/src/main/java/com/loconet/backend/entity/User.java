@@ -1,15 +1,19 @@
 package com.loconet.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.loconet.backend.entity.UserIntent;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +23,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue
@@ -42,6 +46,12 @@ public class User {
 
     @Column(name = "home_location", columnDefinition = "geography(Point,4326)")
     private Point homeLocation;
+
+    @Column(name = "current_location", columnDefinition = "geography(Point,4326)")
+    private Point currentLocation;
+
+    @Column(name = "location_updated_at")
+    private Instant locationUpdatedAt;
 
     @Column(length = 100)
     private String hometown;
@@ -85,9 +95,6 @@ public class User {
     }
 
     // ---- Relationships ----
-    // Owned collections are excluded from equals/hashCode/toString and JSON
-    // serialization to avoid infinite recursion and huge lazy-loaded payloads.
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
@@ -115,4 +122,43 @@ public class User {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private List<UserConnection> receivedConnections = new ArrayList<>();
+
+    // ==============================================================
+    // 🔥 SPRING SECURITY USERDETAILS IMPLEMENTATION (The Fix for 401)
+    // ==============================================================
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.userTier));
+    }
+
+    @Override
+    public String getPassword() {
+        return this.passwordHash; // Spring ko bata diya ki actual password kahan hai
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email; // Spring ko bata diya ki login email se hoga
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // VIP: Ye false rehne par sahi password ke baad bhi 401 aata hai
+    }
 }
