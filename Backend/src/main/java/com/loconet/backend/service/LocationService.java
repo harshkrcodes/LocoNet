@@ -1,4 +1,3 @@
-// File: Backend/src/main/java/com/loconet/backend/service/LocationService.java
 package com.loconet.backend.service;
 
 import com.loconet.backend.dto.NearbyUserResponse;
@@ -21,17 +20,16 @@ public class LocationService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Finds users within radiusMeters of (latitude, longitude), excluding
-     * currentUserId. The exclusion also happens inside the native query
-     * (u.id <> :excludeUserId), so a requesting user is never in the result
-     * set even before this mapping step — no post-filtering needed here.
-     */
+    @Transactional
+    public void updateUserLocation(UUID userId, double latitude, double longitude) {
+        userRepository.updateUserLocation(userId, latitude, longitude);
+    }
+
     @Transactional(readOnly = true)
     public List<NearbyUserResponse> findNearbyUsers(UUID currentUserId,
-                                                      double latitude,
-                                                      double longitude,
-                                                      double radiusMeters) {
+                                                    double latitude,
+                                                    double longitude,
+                                                    double radiusMeters) {
         List<NearbyUserProjection> rows =
                 userRepository.findNearbyUsers(latitude, longitude, radiusMeters, currentUserId);
 

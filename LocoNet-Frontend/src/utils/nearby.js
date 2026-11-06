@@ -1,9 +1,11 @@
 // File: src/utils/nearby.js
 export const RADIUS_OPTIONS = [1000, 2000, 5000, 10000]; // meters
 
+// NETWORKING is teal, not blue, so no user pin can be mistaken for the
+// system blue "you are here" dot on the map.
 export const INTENT_META = {
   DATING: { label: 'Dating', color: '#E8548C' },
-  NETWORKING: { label: 'Networking', color: '#3B82F6' },
+  NETWORKING: { label: 'Networking', color: '#0D9488' },
   SPORTS: { label: 'Sports', color: '#16A34A' },
   STUDY: { label: 'Study', color: '#F59E0B' },
   GENERAL: { label: 'Open to chat', color: '#5B5BD6' },

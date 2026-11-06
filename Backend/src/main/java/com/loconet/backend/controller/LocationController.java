@@ -15,14 +15,12 @@ import java.util.UUID;
 public class LocationController {
 
     private static final double DEFAULT_RADIUS_METERS = 5000.0;
-
     private final LocationService locationService;
 
     public LocationController(LocationService locationService) {
         this.locationService = locationService;
     }
 
-    // 🔥 FIX: Made lat/lon optional and removed strict @Validated to prevent 400 crashes
     @GetMapping("/nearby")
     public ResponseEntity<List<NearbyUserResponse>> findNearbyUsers(
             @AuthenticationPrincipal UUID userId,
@@ -30,7 +28,6 @@ public class LocationController {
             @RequestParam(required = false) Double lon,
             @RequestParam(required = false) Double radiusMeters
     ) {
-        // Agar coordinates missing hain toh error ki jagah empty list bhejo
         if (lat == null || lon == null) {
             return ResponseEntity.ok(new ArrayList<>());
         }
@@ -45,7 +42,9 @@ public class LocationController {
             @AuthenticationPrincipal UUID userId,
             @RequestBody LocationUpdateRequest request) {
 
-        // locationService.updateUserLocation(userId, request.getLat(), request.getLon());
+        // Frontend se aayi GPS coordinates ab seedha Service/DB mein jayegi
+        locationService.updateUserLocation(userId, request.getLat(), request.getLon());
+
         return ResponseEntity.ok().build();
     }
 

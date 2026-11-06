@@ -6,15 +6,16 @@ import { useAuth } from '../context/AuthContext';
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import MapScreen from '../screens/MapScreen';
+import ChatScreen from '../screens/ChatScreen'; // Naya ChatScreen import kiya
 import { colors } from '../theme';
-import MapScreen from '../screens/MapScreen'; // Naya screen imported
 
 const Stack = createNativeStackNavigator();
 
 /**
- * Single stack with conditionally-defined screens (the pattern React
- * Navigation recommends for auth flows): when `isAuthenticated` flips, the
- * stack swaps automatically — no manual navigate() after login/logout.
+- Single stack with conditionally-defined screens (the pattern React
+- Navigation recommends for auth flows): when `isAuthenticated` flips, the
+- stack swaps automatically — no manual navigate() after login/logout.
  */
 export default function RootNavigator() {
   const { isAuthenticated, isRestoring } = useAuth();
@@ -30,12 +31,14 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        // YAHAN CHANGE KIYA HAI: Home aur Map dono ko fragment mein daal diya
+        // Authenticated users ke liye Home, Map, aur ab ChatScreen available hai
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Map" component={MapScreen} />
+          <Stack.Screen name="ChatScreen" component={ChatScreen} />
         </>
       ) : (
+        // Non-authenticated users ke liye Login/Signup
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
