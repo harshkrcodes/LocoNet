@@ -18,7 +18,6 @@ const regionFor = ({ latitude, longitude }, meters) => {
 
 const SELECT_CAMERA_OFFSET = 0.18;
 
-// YAHAN CHANGE HUA HAI: { navigation } add kiya gaya hai
 export default function MapScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
@@ -62,12 +61,10 @@ export default function MapScreen({ navigation }) {
 
   const handleClose = useCallback(() => setSelectedId(null), []);
 
-  // YAHAN CHANGE HUA HAI: Navigation logic add kar diya
   const handleMessage = useCallback((user) => {
     navigation.navigate('ChatScreen', {
       receiverId: user.id,
       receiverName: user.fullName
-      // Note: currentUserId hum ChatScreen me direct token se nikal lenge ya context se
     });
   }, [navigation]);
 
@@ -147,6 +144,15 @@ export default function MapScreen({ navigation }) {
           </View>
         )}
       </View>
+
+      {/* YEH HAIN TERA NAYA BUTTON JO INBOX KHOLENGA */}
+      <Pressable
+        style={[styles.inboxButton, styles.shadow]}
+        onPress={() => navigation.navigate('Inbox')}
+      >
+        <Text style={styles.inboxButtonText}>💬 My Chats</Text>
+      </Pressable>
+
     </View>
   );
 }
@@ -184,4 +190,20 @@ const styles = StyleSheet.create({
   },
   sheetLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },
   error: { color: colors.error, fontSize: 13, marginTop: spacing.sm },
+
+  /* Naye button ke styles */
+  inboxButton: {
+    position: 'absolute',
+    bottom: 200,
+    right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+  },
+  inboxButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  }
 });

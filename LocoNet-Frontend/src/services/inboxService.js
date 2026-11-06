@@ -1,12 +1,14 @@
 // File: src/services/inboxService.js
 import api from './api';
 
-/**
- * GET /api/inbox -> [{ userId, fullName, lastMessage, timestamp, unreadCount }]
- * `signal` is an AbortSignal so a stale request can be cancelled when a
- * newer one starts or the screen loses focus. The JWT is attached by api.js.
- */
-export async function fetchInbox(signal) {
-  const { data } = await api.get('/api/inbox', { signal });
-  return data;
-}
+export const fetchInbox = async (signal) => {
+  try {
+    // Tera api.js already baseURL aur token automatically handle kar lega
+    const response = await api.get('/api/inbox', {
+      signal
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -8,8 +8,6 @@ import CenteredState from '../components/CenteredState';
 import InboxRow, { INBOX_ROW_HEIGHT } from '../components/InboxRow';
 import { fetchInbox } from '../services/inboxService';
 import { colors, spacing } from '../theme';
-import { getApiErrorMessage } from '../utils/errors';
-import { isSameInbox, prepareInbox } from '../utils/inbox';
 
 // Must match the name your ChatScreen is registered under in the navigator.
 const CHAT_ROUTE = 'ChatScreen';
@@ -51,13 +49,26 @@ export default function InboxScreen({ navigation }) {
       const raw = await fetchInbox(controller.signal);
       if (controller.signal.aborted) return;
 
-      const next = prepareInbox(raw);
-      // Identical data -> keep the previous array so nothing re-renders.
-      setItems((prev) => (isSameInbox(prev, next) ? prev : next));
+      // In-place logic instead of external utils
+      const next = (raw || []).map(item => ({
+        ...item,
+        initial: item.fullName ? item.fullName.charAt(0).toUpperCase() : '?',
+        avatarColor: colors.primary, // Defaulting to primary color
+        // Convert ISO string to timestamp for sorting/display
+        timestampMs: new Date(item.timestamp).getTime()
+      }));
+
+      // Simple check to avoid unnecessary re-renders
+      setItems((prev) => {
+        if (prev.length !== next.length) return next;
+        const isSame = prev.every((p, i) => p.userId === next[i].userId && p.timestampMs === next[i].timestampMs);
+        return isSame ? prev : next;
+      });
       setError('');
     } catch (e) {
       if (controller.signal.aborted || axios.isCancel(e)) return;
-      setError(getApiErrorMessage(e));
+      // Simple error message instead of external util
+      setError(e.response?.data?.message || e.message || 'Something went wrong while fetching chats.');
     }
 
     setIsInitialLoading(false);
@@ -122,7 +133,7 @@ export default function InboxScreen({ navigation }) {
     [isRefreshing, onRefresh]
   );
 
-  const totalUnread = useMemo(() => items.reduce((sum, item) => sum + item.unreadCount, 0), [items]);
+  const totalUnread = useMemo(() => items.reduce((sum, item) => sum + (item.unreadCount || 0), 0), [items]);
 
   if (isInitialLoading) {
     return <CenteredState loading title="Loading your chats…" />;
