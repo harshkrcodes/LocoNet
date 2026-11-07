@@ -1,4 +1,3 @@
-// File: src/screens/ChatScreen.js
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
@@ -8,11 +7,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useStompChat from '../hooks/useStompChat';
 import { colors, radius, spacing } from '../theme';
 
-// Smart Time Formatter for Chat Bubbles
+// Bubble Time Formatter
 const formatMessageTime = (timestamp) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+// Date Badge Formatter (Day Separator)
+const formatDateBadge = (timestamp) => {
+  if (!timestamp) return 'Today';
+  const date = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 export default function ChatScreen({ route, navigation }) {
@@ -29,21 +41,38 @@ export default function ChatScreen({ route, navigation }) {
     setInputText('');
   };
 
-  const renderMessage = ({ item }) => {
+  const renderMessage = ({ item, index }) => {
     const isMe = item.receiverId === receiverId;
-    const timeString = formatMessageTime(item.timestamp || Date.now()); // Fallback to now if purely local
+    const timeString = formatMessageTime(item.timestamp || Date.now());
+
+    // Day Change Separator Logic
+    let showDateBadge = false;
+    if (index === 0) {
+      showDateBadge = true;
+    } else {
+      const currentMsgDate = new Date(item.timestamp || Date.now()).toDateString();
+      const prevMsgDate = new Date(messages[index - 1]?.timestamp || Date.now()).toDateString();
+      if (currentMsgDate !== prevMsgDate) showDateBadge = true;
+    }
 
     return (
-      <View style={[styles.msgWrapper, isMe ? styles.msgMe : styles.msgThem]}>
-        <View style={[styles.msgBubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-          <Text style={[styles.msgText, isMe ? styles.textMe : styles.textThem]}>
-            {item.content}
-          </Text>
-          <View style={styles.timeContainer}>
-            <Text style={[styles.timeText, isMe ? styles.timeTextMe : styles.timeTextThem]}>
-              {timeString}
+      <View>
+        {showDateBadge && (
+          <View style={styles.dateBadgeContainer}>
+            <Text style={styles.dateBadgeText}>{formatDateBadge(item.timestamp || Date.now())}</Text>
+          </View>
+        )}
+        <View style={[styles.msgWrapper, isMe ? styles.msgMe : styles.msgThem]}>
+          <View style={[styles.msgBubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+            <Text style={[styles.msgText, isMe ? styles.textMe : styles.textThem]}>
+              {item.content}
             </Text>
-            {isMe && <Text style={styles.tickText}>✓</Text>}
+            <View style={styles.timeContainer}>
+              <Text style={[styles.timeText, isMe ? styles.timeTextMe : styles.timeTextThem]}>
+                {timeString}
+              </Text>
+              {isMe && <Text style={styles.tickText}>✓</Text>}
+            </View>
           </View>
         </View>
       </View>
@@ -110,15 +139,17 @@ const styles = StyleSheet.create({
   statusIndicator: { paddingLeft: spacing.sm },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   listContent: { padding: spacing.md, gap: spacing.sm },
+  dateBadgeContainer: { alignItems: 'center', marginVertical: 12 },
+  dateBadgeText: {
+    backgroundColor: '#E0E0E0', color: '#555', paddingHorizontal: 12,
+    paddingVertical: 4, borderRadius: 12, fontSize: 12, overflow: 'hidden'
+  },
   msgWrapper: { width: '100%', flexDirection: 'row', marginVertical: 4 },
   msgMe: { justifyContent: 'flex-end' },
   msgThem: { justifyContent: 'flex-start' },
   msgBubble: {
-    maxWidth: '80%',
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 8,
-    borderRadius: radius.lg
+    maxWidth: '80%', paddingHorizontal: 12, paddingTop: 10,
+    paddingBottom: 8, borderRadius: radius.lg
   },
   bubbleMe: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
   bubbleThem: { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
@@ -126,11 +157,8 @@ const styles = StyleSheet.create({
   textMe: { color: '#FFFFFF' },
   textThem: { color: colors.text },
   timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginTop: 4,
-    marginLeft: 10
+    flexDirection: 'row', justifyContent: 'flex-end',
+    alignItems: 'center', marginTop: 4, marginLeft: 10
   },
   timeText: { fontSize: 10 },
   timeTextMe: { color: 'rgba(255, 255, 255, 0.7)' },

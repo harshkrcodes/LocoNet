@@ -1,9 +1,7 @@
-// File: src/navigation/RootNavigator.js
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import MapScreen from '../screens/MapScreen';
@@ -28,7 +26,7 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
         <Stack.Group>
-          <Stack.Screen name="Home" component={HomeScreen} />
+          {/* Seedha Map par land karenge */}
           <Stack.Screen name="Map" component={MapScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
           <Stack.Screen name="Inbox" component={InboxScreen} />
