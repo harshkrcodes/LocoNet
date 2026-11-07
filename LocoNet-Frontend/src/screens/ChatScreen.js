@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+// File: src/screens/ChatScreen.js
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
   KeyboardAvoidingView, Platform, Pressable
@@ -6,6 +7,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useStompChat from '../hooks/useStompChat';
 import { colors, radius, spacing } from '../theme';
+
+// Smart Time Formatter for Chat Bubbles
+const formatMessageTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 export default function ChatScreen({ route, navigation }) {
   const { receiverId, receiverName } = route.params;
@@ -23,13 +31,20 @@ export default function ChatScreen({ route, navigation }) {
 
   const renderMessage = ({ item }) => {
     const isMe = item.receiverId === receiverId;
+    const timeString = formatMessageTime(item.timestamp || Date.now()); // Fallback to now if purely local
+
     return (
       <View style={[styles.msgWrapper, isMe ? styles.msgMe : styles.msgThem]}>
         <View style={[styles.msgBubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
           <Text style={[styles.msgText, isMe ? styles.textMe : styles.textThem]}>
             {item.content}
-            {isMe && <Text style={styles.tickText}>  ✓</Text>}
           </Text>
+          <View style={styles.timeContainer}>
+            <Text style={[styles.timeText, isMe ? styles.timeTextMe : styles.timeTextThem]}>
+              {timeString}
+            </Text>
+            {isMe && <Text style={styles.tickText}>✓</Text>}
+          </View>
         </View>
       </View>
     );
@@ -38,7 +53,6 @@ export default function ChatScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      // iOS mein 'padding' aur Android mein 'height' sabse best kaam karta hai har phone ke liye
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 25}
     >
@@ -99,13 +113,29 @@ const styles = StyleSheet.create({
   msgWrapper: { width: '100%', flexDirection: 'row', marginVertical: 4 },
   msgMe: { justifyContent: 'flex-end' },
   msgThem: { justifyContent: 'flex-start' },
-  msgBubble: { maxWidth: '80%', padding: 12, borderRadius: radius.lg },
+  msgBubble: {
+    maxWidth: '80%',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
+    borderRadius: radius.lg
+  },
   bubbleMe: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
   bubbleThem: { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
   msgText: { fontSize: 15, lineHeight: 20 },
   textMe: { color: '#FFFFFF' },
   textThem: { color: colors.text },
-  tickText: { color: '#BBDEFB', fontSize: 12 },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 4,
+    marginLeft: 10
+  },
+  timeText: { fontSize: 10 },
+  timeTextMe: { color: 'rgba(255, 255, 255, 0.7)' },
+  timeTextThem: { color: colors.textMuted },
+  tickText: { color: '#BBDEFB', fontSize: 10, marginLeft: 4, fontWeight: 'bold' },
   inputContainer: {
     flexDirection: 'row', padding: spacing.sm, paddingHorizontal: spacing.md,
     backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: '#E5E5E5',
