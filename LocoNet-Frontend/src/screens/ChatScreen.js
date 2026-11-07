@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+// File: src/screens/ChatScreen.js
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
   KeyboardAvoidingView, Platform, Pressable
@@ -7,14 +8,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useStompChat from '../hooks/useStompChat';
 import { colors, radius, spacing } from '../theme';
 
-// Bubble Time Formatter
 const formatMessageTime = (timestamp) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-// Date Badge Formatter (Day Separator)
 const formatDateBadge = (timestamp) => {
   if (!timestamp) return 'Today';
   const date = new Date(timestamp);
@@ -28,16 +27,27 @@ const formatDateBadge = (timestamp) => {
 };
 
 export default function ChatScreen({ route, navigation }) {
-  const { receiverId, receiverName } = route.params;
+  // Destructure shoutQuote from navigation params
+  const { receiverId, receiverName, shoutQuote } = route.params;
   const insets = useSafeAreaInsets();
 
   const { messages, isConnected, sendMessage } = useStompChat(receiverId);
   const [inputText, setInputText] = useState('');
+  const [activeQuote, setActiveQuote] = useState(shoutQuote || null);
   const flatListRef = useRef();
 
   const handleSend = () => {
     if (inputText.trim() === '') return;
-    sendMessage(inputText);
+
+    let finalPayload = inputText;
+
+    // Embed the quote into the payload if it exists
+    if (activeQuote) {
+      finalPayload = `📢 Replying to your Local Feed:\n"${activeQuote}"\n\n${inputText}`;
+      setActiveQuote(null); // Clear quote after sending
+    }
+
+    sendMessage(finalPayload);
     setInputText('');
   };
 
@@ -45,7 +55,6 @@ export default function ChatScreen({ route, navigation }) {
     const isMe = item.receiverId === receiverId;
     const timeString = formatMessageTime(item.timestamp || Date.now());
 
-    // Day Change Separator Logic
     let showDateBadge = false;
     if (index === 0) {
       showDateBadge = true;
@@ -71,7 +80,7 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={[styles.timeText, isMe ? styles.timeTextMe : styles.timeTextThem]}>
                 {timeString}
               </Text>
-              {isMe && <Text style={styles.tickText}>✓</Text>}
+              {isMe && <Text style={styles.tickText}>✓✓</Text>}
             </View>
           </View>
         </View>
@@ -104,6 +113,19 @@ export default function ChatScreen({ route, navigation }) {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
+
+      {/* Quote Banner UI displayed above the input field */}
+      {activeQuote && (
+        <View style={styles.quoteBanner}>
+          <View style={styles.quoteContent}>
+            <Text style={styles.quoteTitle}>Replying to Local Feed</Text>
+            <Text style={styles.quoteText} numberOfLines={2}>"{activeQuote}"</Text>
+          </View>
+          <Pressable onPress={() => setActiveQuote(null)} style={styles.quoteClose}>
+            <Text style={styles.quoteCloseText}>✕</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
         <TextInput
@@ -164,6 +186,19 @@ const styles = StyleSheet.create({
   timeTextMe: { color: 'rgba(255, 255, 255, 0.7)' },
   timeTextThem: { color: colors.textMuted },
   tickText: { color: '#BBDEFB', fontSize: 10, marginLeft: 4, fontWeight: 'bold' },
+
+  /* Naye Quote Styles */
+  quoteBanner: {
+    flexDirection: 'row', backgroundColor: '#F5F5F5', marginHorizontal: spacing.md,
+    borderLeftWidth: 4, borderLeftColor: colors.primary, borderRadius: 4,
+    padding: 8, marginBottom: 8, alignItems: 'center'
+  },
+  quoteContent: { flex: 1 },
+  quoteTitle: { color: colors.primary, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  quoteText: { color: '#555', fontSize: 13, fontStyle: 'italic' },
+  quoteClose: { padding: 8 },
+  quoteCloseText: { color: '#888', fontSize: 16, fontWeight: 'bold' },
+
   inputContainer: {
     flexDirection: 'row', padding: spacing.sm, paddingHorizontal: spacing.md,
     backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: '#E5E5E5',
