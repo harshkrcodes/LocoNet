@@ -10,6 +10,7 @@ import UserProfileCard from '../components/UserProfileCard';
 import useNearbyUsers from '../hooks/useNearbyUsers';
 import { colors, radius as corners, spacing } from '../theme';
 import { formatRadius } from '../utils/nearby';
+import { useAuth } from '../context/AuthContext';
 
 const regionFor = ({ latitude, longitude }, meters) => {
   const delta = (meters * 2.6) / 111000;
@@ -20,6 +21,7 @@ const SELECT_CAMERA_OFFSET = 0.18;
 
 export default function MapScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
   const mapRef = useRef(null);
   const regionRef = useRef(null);
   const { radius, setRadius, coords, users, status, error, isFetching, refresh } = useNearbyUsers();
@@ -124,6 +126,12 @@ export default function MapScreen({ navigation }) {
           <Text style={styles.title}>Nearby</Text>
           <Text style={styles.subtitle}>{summary}</Text>
         </View>
+
+        {/* NAYA LOGOUT BUTTON */}
+        <Pressable onPress={signOut} style={{ marginRight: 15, justifyContent: 'center' }}>
+          <Text style={{ color: colors.error || '#F44336', fontWeight: '700', fontSize: 14 }}>Logout</Text>
+        </Pressable>
+
         <Pressable onPress={refresh} disabled={isFetching} style={styles.refresh} accessibilityRole="button">
           {isFetching ? (
             <ActivityIndicator size="small" color={colors.primary} />
@@ -145,7 +153,6 @@ export default function MapScreen({ navigation }) {
         )}
       </View>
 
-      {/* YEH HAIN TERA NAYA BUTTON JO INBOX KHOLENGA */}
       <Pressable
         style={[styles.inboxButton, styles.shadow]}
         onPress={() => navigation.navigate('Inbox')}
@@ -191,7 +198,6 @@ const styles = StyleSheet.create({
   sheetLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },
   error: { color: colors.error, fontSize: 13, marginTop: spacing.sm },
 
-  /* Naye button ke styles */
   inboxButton: {
     position: 'absolute',
     bottom: 200,
