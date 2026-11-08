@@ -1,12 +1,34 @@
+// File: src/components/InboxRow.js
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radius } from '../theme';
 
 export const INBOX_ROW_HEIGHT = 76;
 
+// Smart Time Formatter Function
+const formatTime = (timestampMs) => {
+  if (!timestampMs) return '';
+
+  const messageDate = new Date(timestampMs);
+  const today = new Date();
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (messageDate.toDateString() === today.toDateString()) {
+    // Aaj ka message -> "10:45 AM"
+    return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (messageDate.toDateString() === yesterday.toDateString()) {
+    // Kal ka message -> "Yesterday"
+    return 'Yesterday';
+  } else {
+    // Purana message -> "07/11/2026"
+    return messageDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+};
+
 export default function InboxRow({ userId, fullName, lastMessage, timestampMs, unreadCount, initial, avatarColor, onPress }) {
-  // Time formatting directly in component
-  const timeString = new Date(timestampMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const displayTime = formatTime(timestampMs);
 
   return (
     <Pressable style={styles.container} onPress={() => onPress(userId, fullName)}>
@@ -16,7 +38,7 @@ export default function InboxRow({ userId, fullName, lastMessage, timestampMs, u
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={1}>{fullName}</Text>
-          <Text style={styles.time}>{timeString}</Text>
+          <Text style={styles.time}>{displayTime}</Text>
         </View>
         <View style={styles.footer}>
           <Text style={[styles.message, unreadCount > 0 && styles.messageUnread]} numberOfLines={1}>

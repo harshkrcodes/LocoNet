@@ -127,11 +127,17 @@ export default function MapScreen({ navigation }) {
           <Text style={styles.subtitle}>{summary}</Text>
         </View>
 
-        {/* NAYA LOGOUT BUTTON */}
+        {/* Naya Edit Bio button add kiya gaya hai */}
+        <Pressable
+          onPress={() => navigation.navigate('EditProfile')}
+          style={{ marginRight: 15, justifyContent: 'center' }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>Edit Bio</Text>
+        </Pressable>
+
         <Pressable onPress={signOut} style={{ marginRight: 15, justifyContent: 'center' }}>
           <Text style={{ color: colors.error || '#F44336', fontWeight: '700', fontSize: 14 }}>Logout</Text>
         </Pressable>
-
         <Pressable onPress={refresh} disabled={isFetching} style={styles.refresh} accessibilityRole="button">
           {isFetching ? (
             <ActivityIndicator size="small" color={colors.primary} />
@@ -153,13 +159,24 @@ export default function MapScreen({ navigation }) {
         )}
       </View>
 
-      <Pressable
-        style={[styles.inboxButton, styles.shadow]}
-        onPress={() => navigation.navigate('Inbox')}
-      >
-        <Text style={styles.inboxButtonText}>💬 My Chats</Text>
-      </Pressable>
+      {/* Conditionally render floating buttons only when no marker is selected */}
+      {!selectedId && (
+        <>
+          <Pressable
+            style={[styles.feedButton, styles.shadow]}
+            onPress={() => navigation.navigate('Shouts', { coords })}
+          >
+            <Text style={styles.feedButtonText}>📢 Local Feed</Text>
+          </Pressable>
 
+          <Pressable
+            style={[styles.inboxButton, styles.shadow]}
+            onPress={() => navigation.navigate('Inbox')}
+          >
+            <Text style={styles.inboxButtonText}>💬 My Chats</Text>
+          </Pressable>
+        </>
+      )}
     </View>
   );
 }
@@ -197,7 +214,20 @@ const styles = StyleSheet.create({
   },
   sheetLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },
   error: { color: colors.error, fontSize: 13, marginTop: spacing.sm },
-
+  feedButton: {
+    position: 'absolute',
+    bottom: 200,
+    left: 20,
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+  },
+  feedButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   inboxButton: {
     position: 'absolute',
     bottom: 200,

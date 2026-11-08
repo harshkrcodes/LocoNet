@@ -1,5 +1,6 @@
 package com.loconet.backend.service;
 
+import com.loconet.backend.dto.ProfileUpdateRequest;
 import com.loconet.backend.dto.UserDTO;
 import com.loconet.backend.dto.UserRegistrationRequest;
 import com.loconet.backend.exception.DuplicateResourceException;
@@ -67,6 +68,28 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
         return toDto(user);
+    }
+
+    // 🔥 FIX: Now returns UserDTO instead of raw User entity
+    @Transactional
+    public UserDTO updateProfile(UUID userId, ProfileUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        if (request.getOrganization() != null) {
+            user.setOrganization(request.getOrganization());
+        }
+
+        if (request.getIntent() != null) {
+            user.setIntent(request.getIntent());
+        }
+
+        if (request.getInterests() != null) {
+            user.setInterests(request.getInterests());
+        }
+
+        User updatedUser = userRepository.save(user);
+        return toDto(updatedUser); // Convert to safe DTO before returning
     }
 
     private Point toPoint(Double latitude, Double longitude) {

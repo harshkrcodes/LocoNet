@@ -1,5 +1,4 @@
-// File: src/screens/ChatScreen.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
   KeyboardAvoidingView, Platform, Pressable
@@ -27,7 +26,6 @@ const formatDateBadge = (timestamp) => {
 };
 
 export default function ChatScreen({ route, navigation }) {
-  // Destructure shoutQuote from navigation params
   const { receiverId, receiverName, shoutQuote } = route.params;
   const insets = useSafeAreaInsets();
 
@@ -41,10 +39,9 @@ export default function ChatScreen({ route, navigation }) {
 
     let finalPayload = inputText;
 
-    // Embed the quote into the payload if it exists
     if (activeQuote) {
       finalPayload = `📢 Replying to your Local Feed:\n"${activeQuote}"\n\n${inputText}`;
-      setActiveQuote(null); // Clear quote after sending
+      setActiveQuote(null);
     }
 
     sendMessage(finalPayload);
@@ -114,14 +111,17 @@ export default function ChatScreen({ route, navigation }) {
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
-      {/* Quote Banner UI displayed above the input field */}
       {activeQuote && (
         <View style={styles.quoteBanner}>
           <View style={styles.quoteContent}>
             <Text style={styles.quoteTitle}>Replying to Local Feed</Text>
             <Text style={styles.quoteText} numberOfLines={2}>"{activeQuote}"</Text>
           </View>
-          <Pressable onPress={() => setActiveQuote(null)} style={styles.quoteClose}>
+          <Pressable
+            onPress={() => setActiveQuote(null)}
+            style={styles.quoteClose}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
             <Text style={styles.quoteCloseText}>✕</Text>
           </Pressable>
         </View>
@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
   timeTextThem: { color: colors.textMuted },
   tickText: { color: '#BBDEFB', fontSize: 10, marginLeft: 4, fontWeight: 'bold' },
 
-  /* Naye Quote Styles */
   quoteBanner: {
     flexDirection: 'row', backgroundColor: '#F5F5F5', marginHorizontal: spacing.md,
     borderLeftWidth: 4, borderLeftColor: colors.primary, borderRadius: 4,
@@ -196,8 +195,8 @@ const styles = StyleSheet.create({
   quoteContent: { flex: 1 },
   quoteTitle: { color: colors.primary, fontSize: 12, fontWeight: '700', marginBottom: 2 },
   quoteText: { color: '#555', fontSize: 13, fontStyle: 'italic' },
-  quoteClose: { padding: 8 },
-  quoteCloseText: { color: '#888', fontSize: 16, fontWeight: 'bold' },
+  quoteClose: { padding: 8, justifyContent: 'center', alignItems: 'center' },
+  quoteCloseText: { color: '#888', fontSize: 18, fontWeight: 'bold' },
 
   inputContainer: {
     flexDirection: 'row', padding: spacing.sm, paddingHorizontal: spacing.md,
