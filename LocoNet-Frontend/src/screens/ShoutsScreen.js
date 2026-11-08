@@ -1,4 +1,3 @@
-// File: src/screens/ShoutsScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, FlatList,
@@ -6,11 +5,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchNearbyShouts, postShout } from '../services/shoutService';
+import { useAuth } from '../context/AuthContext';
 import { colors, radius, spacing } from '../theme';
 
 /**
  * Formats timestamp to a detailed local string.
- * Example output: "3h ago at 3:14 PM" or "Just now at 3:14 PM"
  */
 const formatShoutTime = (timestamp) => {
   if (!timestamp) return 'Just now';
@@ -37,6 +36,11 @@ const formatShoutTime = (timestamp) => {
 export default function ShoutsScreen({ route, navigation }) {
   const { coords } = route.params || {};
   const insets = useSafeAreaInsets();
+
+  const { session } = useAuth();
+
+  // Safely extract ID from session
+  const currentUserId = session?.id || session?.userId || session?.user?.id || null;
 
   const [shouts, setShouts] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -77,9 +81,6 @@ export default function ShoutsScreen({ route, navigation }) {
     }
   };
 
-  /**
-   * Navigates to ChatScreen and passes the shout content as a quote parameter.
-   */
   const openChatWithQuote = (authorId, authorName, shoutContent) => {
     if (!authorId) return;
     navigation.navigate('ChatScreen', {
@@ -89,26 +90,40 @@ export default function ShoutsScreen({ route, navigation }) {
     });
   };
 
-  const renderShout = ({ item }) => (
-    <View style={styles.shoutCard}>
-      <View style={styles.shoutHeader}>
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarInitial}>{item.authorName ? item.authorName.charAt(0).toUpperCase() : '?'}</Text>
+  const renderShout = ({ item }) => {
+    // 🔥 FIX: Now properly using currentUserId and session to verify authorship
+    const isMyShout = (currentUserId && item.authorId === currentUserId) ||
+                      (session?.fullName && item.authorName === session.fullName) ||
+                      (session?.name && item.authorName === session.name);
+
+    return (
+      <View style={styles.shoutCard}>
+        <View style={styles.shoutHeader}>
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarInitial}>{item.authorName ? item.authorName.charAt(0).toUpperCase() : '?'}</Text>
+          </View>
+          <View style={styles.authorInfo}>
+            <Text style={styles.authorName}>{item.authorName || 'Anonymous'}</Text>
+            <Text style={styles.timeText}>{formatShoutTime(item.createdAt)}</Text>
+          </View>
+
+          {isMyShout ? (
+            <View style={styles.youBadge}>
+              <Text style={styles.youBadgeText}>You</Text>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.messageBtn}
+              onPress={() => openChatWithQuote(item.authorId, item.authorName, item.content)}
+            >
+              <Text style={styles.messageBtnText}>💬 Message</Text>
+            </Pressable>
+          )}
         </View>
-        <View style={styles.authorInfo}>
-          <Text style={styles.authorName}>{item.authorName || 'Anonymous'}</Text>
-          <Text style={styles.timeText}>{formatShoutTime(item.createdAt)}</Text>
-        </View>
-        <Pressable
-          style={styles.messageBtn}
-          onPress={() => openChatWithQuote(item.authorId, item.authorName, item.content)}
-        >
-          <Text style={styles.messageBtnText}>💬 Message</Text>
-        </Pressable>
+        <Text style={styles.shoutContent}>{item.content}</Text>
       </View>
-      <Text style={styles.shoutContent}>{item.content}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -197,6 +212,8 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   messageBtn: { backgroundColor: '#E8F5E9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15 },
   messageBtnText: { color: '#2E7D32', fontWeight: '700', fontSize: 12 },
+  youBadge: { backgroundColor: '#EEEEEE', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 15 },
+  youBadgeText: { color: '#757575', fontWeight: '800', fontSize: 12 },
   shoutContent: { fontSize: 15, lineHeight: 22, color: colors.text },
   inputContainer: {
     flexDirection: 'row', padding: spacing.sm, paddingHorizontal: spacing.md,
